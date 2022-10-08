@@ -55,21 +55,47 @@ class AbelianCayley:
 		self.group_elements = [ tuple(t) for t in self.group_elements ] # self.group_elements comes endowed with a natural (lexicographic) order
 		self.gens = generators
 		
-		if givenAMat != None:
+		self.hasAMat = False
+		if aMat or not (givenAMat is None):
+			self.hasAMat = True
+
+		if not (givenAMat is None):
 			self.adjMat = givenAMat
 		elif aMat:
-			self.adjMat = np.zeros((self.order, self.order), dtype=int)
-			for x in self.group_elements:
-				print(x)
-				Lx = lexValue(x, self.group)
-				for s in self.gens:
-					xs = groupSum(x, s, self.group)
-					Lxs = lexValue(xs, self.group)
-					print(x,Lx,s,xs,Lxs)
-					self.adjMat[Lx, Lxs] = 1
+			self.makeAMat()
 		
 		### todo: adjacency list
 		
+	def makeAMat(self):
+		self.adjMat = np.zeros((self.order, self.order), dtype=int)
+		for x in self.group_elements:
+			# print(x)
+			Lx = lexValue(x, self.group)
+			for s in self.gens:
+				xs = groupSum(x, s, self.group)
+				Lxs = lexValue(xs, self.group)
+				# print(x,Lx,s,xs,Lxs)
+				self.adjMat[Lx, Lxs] = 1
+		self.hasAMat = True
+	
+	def times(self, G2, wantAMat = True):
+		r1, r2 = self.rank, G2.rank
+		o1, o2 = self.order, G2.order
+		g1, g2 = self.group, G2.group
+		gen1, gen2 = self.gens, G2.gens
+		if not wantAMat:
+			return AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], False, False, None)
+		elif self.hasAMat and G2.hasAMat:
+			a1, a2= self.adjMat, G2.adjMat
+			return AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], False, False, np.kron(a1, np.eye(o2, dtype='int')) + np.kron(np.eye(o1, dtype='int'), a2) ) ### todo: order of kron may be wrong...
+		else:
+			AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], True, False, None)
+	
+	def __mul__(self, G2):
+		return self.times(G2)
+	def __rmul__(self, G2):
+		return self.times(G2)
+	
 		
 	### to implement: str?, format?, repr?, eq?, ne?
 
@@ -84,4 +110,17 @@ GC2 = AbelianCayley([(1, 1), (2, 1)], [(1, 0), (0, 1), (2, 0), (0, 4)])
 print(GC2.order, GC2.rank)
 print(GC2.group_elements)
 print(GC2.adjMat)
+"""
+
+"""
+# check adjMat for product graphs
+GC2 = AbelianCayley([(0, 1)], [(1,)])
+# print(GC2.adjMat)
+GC3 = AbelianCayley([(1, 1)], [(1,), (2,)])
+# print(GC3.adjMat)
+GC23 = GC2*GC3
+print(GC23.group, GC23.gens)
+print(GC23.adjMat)
+GCalt = AbelianCayley(GC23.group, GC23.gens)
+print(GCalt.adjMat)
 """
