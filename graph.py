@@ -98,6 +98,8 @@ class AbelianCayley:
 	
 		
 	### to implement: str?, format?, repr?, eq?, ne?
+	
+	### to implement: check for connectivity; compute eigenvalues (exactly! using characters)
 
 """
 GC = AbelianCayley([(3, 1)], [(1,), (6,)])
