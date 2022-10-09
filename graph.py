@@ -1,11 +1,6 @@
 import numpy as np
+from numpy import cos, pi
 import scipy as sp
-
-""" # maybe useful later?
-class AbelianGroup:
-	
-	def __init__(self,
-"""
 
 primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271]
 P = len(primes)
@@ -18,7 +13,7 @@ def groupSum(t1, t2, group):
 	for j in range(n):
 		s[j] = (t1[j] + t2[j]) % primes[group[j][0]]**group[j][1]
 	return tuple(s)
-assert (groupSum((19,),(11,),[(3,1)]) == (2,)), "groupSum error"
+assert groupSum((19,),(11,),[(3,1)]) == (2,), "groupSum error"
 
 def lexValue(t, group):
 	assert len(t) == len(group), "lexValue length mismatch"
@@ -32,8 +27,8 @@ def lexValue(t, group):
 		tot += t[j]
 	return tot
 
-assert (lexValue((0,0), [(3,1),(4,1)]) == 0), "lexValue error"
-assert (lexValue((4,5), [(3,1),(4,1)]) == 49), "lexValue error"
+assert lexValue((0,0), [(3,1),(4,1)]) == 0, "lexValue error"
+assert lexValue((4,5), [(3,1),(4,1)]) == 49, "lexValue error"
 
 class AbelianCayley:
 	
@@ -42,7 +37,7 @@ class AbelianCayley:
 		self.rank = len(group)
 		self.order = 1
 		for (i,e) in group:
-			assert (i < P), "Prime too large"
+			assert i < P, "Prime too large"
 			self.order *= primes[i]**e
 		self.group = group
 		self.group_elements = [ [n] for n in range(primes[self.group[0][0]]**self.group[0][1]) ]
@@ -54,6 +49,7 @@ class AbelianCayley:
 					self.group_elements.append(t + [n])
 		self.group_elements = [ tuple(t) for t in self.group_elements ] # self.group_elements comes endowed with a natural (lexicographic) order
 		self.gens = generators
+		self.deg = len(generators)
 		
 		self.hasAMat = False
 		if aMat or not (givenAMat is None):
@@ -63,6 +59,8 @@ class AbelianCayley:
 			self.adjMat = givenAMat
 		elif aMat:
 			self.makeAMat()
+		
+		self.find_spectrum()
 		
 		### todo: adjacency list
 		
@@ -86,7 +84,7 @@ class AbelianCayley:
 		if not wantAMat:
 			return AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], False, False, None)
 		elif self.hasAMat and G2.hasAMat:
-			a1, a2= self.adjMat, G2.adjMat
+			a1, a2 = self.adjMat, G2.adjMat
 			return AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], False, False, np.kron(a1, np.eye(o2, dtype='int')) + np.kron(np.eye(o1, dtype='int'), a2) ) ### todo: order of kron may be wrong...
 		else:
 			AbelianCayley( g1 + g2, [e + (0,)*r2 for e in gen1] + [(0,)*r1 + e for e in gen2], True, False, None)
@@ -99,7 +97,20 @@ class AbelianCayley:
 		
 	### to implement: str?, format?, repr?, eq?, ne?
 	
-	### to implement: check for connectivity; compute eigenvalues (exactly! using characters)
+	def find_spectrum(self):
+		self.spectrum = []
+		for x in self.group_elements:
+			t = 0
+			for s in self.gens:
+				p = 0
+				for i in range(self.rank):
+					p += x[i]*s[i]/primes[self.group[i][0]]**self.group[i][1]
+				t += cos(2*pi*p)
+			self.spectrum.append(t/self.deg)
+		self.spectrum = np.sort(1 - np.array(self.spectrum))
+		self.gap = self.spectrum[1]
+		self.connected = (self.gap > 0)
+		
 
 """
 GC = AbelianCayley([(3, 1)], [(1,), (6,)])
@@ -125,4 +136,20 @@ print(GC23.group, GC23.gens)
 print(GC23.adjMat)
 GCalt = AbelianCayley(GC23.group, GC23.gens)
 print(GCalt.adjMat)
+"""
+
+"""
+# check spectrum and gap
+GC2 = AbelianCayley([(0, 1)], [(1,)])
+print(GC2.spectrum, GC2.gap)
+GC3 = AbelianCayley([(1, 1)], [(1,), (2,)])
+print(GC3.spectrum, GC3.gap)
+GC23 = GC2*GC3
+print(GC23.spectrum, GC23.gap)
+"""
+
+"""
+# check connectivity
+GC4 = AbelianCayley([(0, 2)], [(2,)])
+print(GC4.connected)
 """
