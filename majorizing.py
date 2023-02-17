@@ -1,5 +1,7 @@
 from graph import *
 from random import randrange
+import numpy as np
+from numpy import sqrt
 
 def majorize(a, b, prec=0): # what is the minimum index k such that for j < k, a[j] <= b[j], to additive error eps?
 	# inputs must be sorted, increasing
@@ -11,10 +13,11 @@ assert majorize([0, 0.25, 0.5],[0, 0.3, 0.3]) == 2, "majorize error"
 
 
 # group data
-(p,e) = (3,2) # (3,1) corresponds to Z/7Z
+(p,e) = (3,1) # (3,1) corresponds to Z/7Z
 base = primes[p]**e
-d = 2 # power
-print("order of group is", base**d)
+d = 4 # power
+order = base**d
+print("order of group is", order)
 stdgens = []
 for i in range(d):
 	v, vinv = [0 for _ in range(d)], [0 for _ in range(d)]
@@ -27,7 +30,7 @@ for i in range(d):
 G = AbelianCayley([(p,e) for _ in range(d)], stdgens)
 # print(G.spectrum)
 
-T = 100 # number of trials
+T = 1000 # number of trials
 data = []
 for _ in range(T):
 	a = 3 # number of additional pairs of generators. could be made random, if desired
@@ -40,13 +43,16 @@ for _ in range(T):
 		if tv in newgens or tv == (0,)*d:
 			g -= 1 # accidentally repeated a generator (either a standard one or a random one already generated), so re-roll
 		else:
-			vinv = [base-v[i] for i in range(d)] # v's inverse
+			vinv = [(base-v[i])%base for i in range(d)] # v's inverse
 			tvinv = tuple(vinv)
 			newgens.append(tv)
 			newgens.append(tvinv)
 	H = AbelianCayley([(p,e) for _ in range(d)], newgens)
 	# print(newgens)
 	# print(H.spectrum)
-	data.append(majorize(G.spectrum, H.spectrum))
+	k = majorize(G.spectrum, H.spectrum)
+	data.append(k)
+	if k < sqrt(order):
+		print(newgens), k
 print(data)
-		
+print(min(data))
